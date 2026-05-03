@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SawitMilenial — Rekap Pemupukan</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --c1: #0b1f12;
+  --c2: #122b1a;
+  --c3: #1a4228;
+  --accent: #3ddc84;
+  --accent2: #06d6a0;
+  --gold: #ffd166;
+  --glass: rgba(255,255,255,0.04);
+  --border: rgba(61,220,132,0.15);
+  --border2: rgba(61,220,132,0.30);
+  --text: #e8f5ee;
+  --text2: #8fbfa0;
+  --text3: #4d7a5e;
+  --danger: #ff6b6b;
+  --r: 14px;
+  --r2: 20px;
+  --r3: 26px;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--c1); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* BG */
+.bg { position:fixed;inset:0;z-index:0;
+  background: radial-gradient(ellipse 90% 70% at 15% 10%, #1e4d2b 0%, transparent 55%),
+              radial-gradient(ellipse 70% 60% at 85% 85%, #0d3320 0%, transparent 50%),
+              linear-gradient(175deg, #0b1f12 0%, #091a0f 100%); }
+.bg-grid { position:fixed;inset:0;z-index:0;
+  background-image: linear-gradient(rgba(61,220,132,0.04) 1px,transparent 1px),
+                    linear-gradient(90deg,rgba(61,220,132,0.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%); }
+.orb { position:fixed;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none;animation:orbF 12s ease-in-out infinite; }
+.orb1 { width:560px;height:560px;background:rgba(61,220,132,0.07);top:-180px;right:-100px;animation-delay:0s; }
+.orb2 { width:420px;height:420px;background:rgba(6,214,160,0.06);bottom:-120px;left:-80px;animation-delay:-4s; }
+.orb3 { width:280px;height:280px;background:rgba(255,209,102,0.04);top:40%;left:35%;animation-delay:-8s; }
+@keyframes orbF { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(28px,-22px) scale(1.06)} 66%{transform:translate(-18px,28px) scale(0.96)} }
+
+/* LAYOUT */
+.app { position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:0 24px 80px; }
+
+/* HEADER */
+.header { padding:40px 0 30px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;animation:fadeD .6s ease both; }
+@keyframes fadeD { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+.h-brand { display:flex;align-items:center;gap:16px; }
+.h-logo {
+  position:relative;width:62px;height:62px;border-radius:18px;flex-shrink:0;
+  background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+  box-shadow:0 0 0 1px rgba(61,220,132,0.4), 0 8px 32px rgba(61,220,132,0.25);
+}
+.h-logo::after {
+  content:'';position:absolute;inset:-5px;border-radius:23px;
+  border:1px solid rgba(61,220,132,0.2);animation:spin 9s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.h-text h1 {
+  font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1;
+  background:linear-gradient(90deg,#fff 0%,var(--accent) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.h-text p { color:var(--text2);font-size:13px;margin-top:5px; }
+.pill {
+  display:flex;align-items:center;gap:7px;
+  background:rgba(61,220,132,0.1);border:1px solid var(--border);
+  border-radius:30px;padding:8px 16px;font-size:12px;font-weight:500;color:var(--accent);
+}
+.dot { width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s ease infinite;box-shadow:0 0 8px var(--accent); }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+
+/* STATS */
+.stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px;animation:fadeU .6s .1s ease both; }
+@keyframes fadeU { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.sc {
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r2);padding:22px 24px;
+  position:relative;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;cursor:default;
+}
+.sc::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s; }
+.sc:hover { transform:translateY(-4px);border-color:var(--border2);box-shadow:0 16px 40px rgba(0,0,0,.3); }
+.sc:hover::before { opacity:1; }
+.sc-head { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px; }
+.sc-label { font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px; }
+.sc-ico { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;background:rgba(61,220,132,0.1);border:1px solid rgba(61,220,132,0.15); }
+.sc-val { font-family:'Syne',sans-serif;font-size:34px;font-weight:700;color:#fff;line-height:1;letter-spacing:-1px; }
+.sc-unit { font-size:14px;color:var(--text2);font-weight:400;margin-left:3px; }
+.sc-sub { font-size:12px;color:var(--text3);margin-top:6px; }
+
+/* EXPORT BAR */
+.ebar {
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r2);
+  padding:15px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;
+  animation:fadeU .6s .2s ease both;
+}
+.ebar-label { font-size:13px;font-weight:500;color:var(--text2);flex:1;min-width:110px; }
+
+/* BUTTONS */
+.btn { display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;outline:none;transition:all .2s;white-space:nowrap; }
+.btn:active { transform:scale(.97); }
+.btn-accent { background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);color:var(--c1);box-shadow:0 4px 20px rgba(61,220,132,.3); }
+.btn-accent:hover { box-shadow:0 8px 30px rgba(61,220,132,.45);transform:translateY(-2px); }
+.btn-xl { background:linear-gradient(135deg,#1d6b3e,#145230);color:#a8f0c4;border:1px solid rgba(45,164,90,.3);box-shadow:0 4px 16px rgba(29,107,62,.3); }
+.btn-xl:hover { box-shadow:0 8px 28px rgba(29,107,62,.5);transform:translateY(-2px); }
+.btn-pdf { background:linear-gradient(135deg,#8b1a1a,#6b0f0f);color:#ffb3b3;border:1px solid rgba(200,50,50,.3);box-shadow:0 4px 16px rgba(139,26,26,.3); }
+.btn-pdf:hover { box-shadow:0 8px 28px rgba(139,26,26,.5);transform:translateY(-2px); }
+.btn-ghost { background:transparent;color:var(--text3);border:1px solid rgba(255,255,255,.1); }
+.btn-ghost:hover { background:var(--glass);color:var(--text2);border-color:rgba(255,255,255,.15);transform:translateY(-1px); }
+.btn-del { background:transparent;color:var(--danger);border:1px solid rgba(255,107,107,.2);font-size:12px;padding:5px 12px; }
+.btn-del:hover { background:rgba(255,107,107,.08);border-color:rgba(255,107,107,.4); }
+
+/* PANEL */
+.panel { background:var(--glass);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;margin-bottom:20px;animation:fadeU .6s .3s ease both; }
+.panel-head { padding:17px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(61,220,132,0.04); }
+.panel-head h2 { font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:9px; }
+.panel-body { padding:26px; }
+
+/* FORM */
+.fgrid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px; }
+.fg { display:flex;flex-direction:column;gap:6px; }
+.fg label { font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px; }
+.fg input,.fg select,.fg textarea {
+  background:rgba(255,255,255,0.04);border:1px solid rgba(61,220,132,0.15);border-radius:10px;
+  padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;
+  transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none;
+}
+.fg select {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%234d7a5e' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
+}
+.fg select option { background:#122b1a;color:var(--text); }
+.fg input:focus,.fg select:focus,.fg textarea:focus { border-color:var(--accent);background:rgba(61,220,132,0.05);box-shadow:0 0 0 3px rgba(61,220,132,.1); }
+.fg textarea { resize:vertical;min-height:78px; }
+.fg input::placeholder,.fg textarea::placeholder { color:var(--text3); }
+.fg.full { grid-column:1/-1; }
+.form-act { display:flex;gap:10px;margin-top:20px;flex-wrap:wrap; }
+
+/* FILTER ROW */
+.frow { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px; }
+.frow input,.frow select {
+  flex:1;min-width:150px;background:rgba(255,255,255,0.04);border:1px solid rgba(61,220,132,.12);
+  border-radius:10px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:13px;
+  color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.frow select {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%234d7a5e' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-color:rgba(255,255,255,0.04);padding-right:32px;
+}
+.frow select option { background:#122b1a; }
+.frow input:focus,.frow select:focus { border-color:var(--accent); }
+.frow input::placeholder { color:var(--text3); }
+
+/* TABLE */
+.tscroll { overflow-x:auto;border-radius:14px;border:1px solid var(--border); }
+table { width:100%;border-collapse:collapse;font-size:13px; }
+thead { position:sticky;top:0;z-index:2; }
+thead th { padding:12px 15px;background:rgba(18,43,26,.97);backdrop-filter:blur(8px);text-align:left;color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;border-bottom:1px solid var(--border); }
+tbody tr { border-bottom:1px solid rgba(61,220,132,.06);transition:background .15s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(61,220,132,.04); }
+td { padding:12px 15px;color:var(--text);vertical-align:middle; }
+td.num { font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--accent); }
+td.mu { color:var(--text2);font-size:12px; }
+
+.rno { display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:rgba(61,220,132,.1);color:var(--accent);font-size:11px;font-weight:700;font-family:'Syne',sans-serif; }
+
+/* CHIPS */
+.chip { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap; }
+.c-urea    { background:rgba(78,205,196,.12);color:#4ecdc4;border:1px solid rgba(78,205,196,.2); }
+.c-npk     { background:rgba(69,119,255,.12);color:#8ab4f8;border:1px solid rgba(69,119,255,.2); }
+.c-mkp     { background:rgba(255,183,77,.12);color:#ffb74d;border:1px solid rgba(255,183,77,.2); }
+.c-dolomit { background:rgba(149,117,205,.12);color:#ce93d8;border:1px solid rgba(149,117,205,.2); }
+.c-borate  { background:rgba(255,138,101,.12);color:#ff8a65;border:1px solid rgba(255,138,101,.2); }
+.c-cirp    { background:rgba(129,199,132,.12);color:#81c784;border:1px solid rgba(129,199,132,.2); }
+.c-lain    { background:rgba(255,255,255,.06);color:var(--text2);border:1px solid rgba(255,255,255,.1); }
+
+/* TOTAL ROW */
+.trow-bar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:15px 20px;background:rgba(61,220,132,.05);border:1px solid var(--border);border-radius:12px;margin-top:16px; }
+.ti .tl { font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;font-weight:600; }
+.ti .tv { font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--accent); }
+
+/* EMPTY */
+.empty { text-align:center;padding:60px 20px; }
+.empty .ei { font-size:52px;display:block;margin-bottom:14px;opacity:.6; }
+.empty h3 { font-size:16px;font-weight:600;color:var(--text2);margin-bottom:6px; }
+.empty p { font-size:13px;color:var(--text3);line-height:1.6; }
+
+/* TOAST */
+#toast { position:fixed;bottom:28px;right:28px;z-index:9999;padding:13px 20px;border-radius:14px;font-size:14px;font-weight:500;color:#fff;background:rgba(15,40,22,.96);border:1px solid var(--border2);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,.4);display:flex;align-items:center;gap:10px;transform:translateY(100px) scale(.9);opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;overflow:hidden; }
+#toast.show { transform:translateY(0) scale(1);opacity:1; }
+#toast .tbar { position:absolute;left:0;bottom:0;height:3px;border-radius:0 0 14px 14px;background:var(--accent);transition:width 3.1s linear; }
+
+@media(max-width:640px){
+  .app{padding:0 14px 60px;}
+  .header{flex-direction:column;padding:26px 0 20px;}
+  .h-text h1{font-size:24px;}
+  .sc-val{font-size:28px;}
+  .panel-body{padding:16px;}
+  .fgrid{grid-template-columns:1fr;}
+  #toast{right:14px;left:14px;bottom:20px;}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="bg-grid"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="h-brand">
+      <div class="h-logo">🌴</div>
+      <div class="h-text">
+        <h1>SawitMilenial</h1>
+        <p>Sistem Rekapitulasi Pemupukan Kelapa Sawit</p>
+      </div>
+    </div>
+    <div class="pill"><span class="dot"></span>Auto-Save Aktif</div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="sc">
+      <div class="sc-head"><span class="sc-label">Total Rekapan</span><div class="sc-ico">📋</div></div>
+      <div class="sc-val" id="sTotal">0</div>
+      <div class="sc-sub">Data tersimpan</div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><span class="sc-label">Total Pupuk</span><div class="sc-ico">⚖️</div></div>
+      <div class="sc-val" id="sKg">0<span class="sc-unit">kg</span></div>
+      <div class="sc-sub">Seluruh periode</div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><span class="sc-label">Total Lahan</span><div class="sc-ico">🗺️</div></div>
+      <div class="sc-val" id="sHa">0<span class="sc-unit">ha</span></div>
+      <div class="sc-sub">Areal dipupuk</div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><span class="sc-label">Bulan Ini</span><div class="sc-ico">📅</div></div>
+      <div class="sc-val" id="sBln">0</div>
+      <div class="sc-sub" id="sBlnLbl">Rekapan</div>
+    </div>
+  </div>
+
+  <!-- EXPORT BAR -->
+  <div class="ebar">
+    <div class="ebar-label">📤 Ekspor Data</div>
+    <button class="btn btn-xl" onclick="doExcel()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      Excel (.xlsx)
+    </button>
+    <button class="btn btn-pdf" onclick="doPDF()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      PDF (.pdf)
+    </button>
+    <button class="btn btn-ghost" onclick="hapusSemua()" style="margin-left:auto;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Hapus Semua
+    </button>
+  </div>
+
+  <!-- FORM -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>✏️ Input Data Pemupukan</h2>
+      <button class="btn btn-ghost" onclick="resetForm()" style="padding:7px 14px;font-size:12px;">↺ Reset</button>
+    </div>
+    <div class="panel-body">
+      <div class="fgrid">
+        <div class="fg"><label>📅 Tanggal</label><input type="date" id="fTgl"></div>
+        <div class="fg"><label>🗂️ Blok / Afdeling</label><input type="text" id="fBlok" placeholder="cth. Blok A-1"></div>
+        <div class="fg"><label>🌿 Luas Lahan (Ha)</label><input type="number" id="fLuas" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="fg"><label>🌴 Jumlah Pohon</label><input type="number" id="fPohon" placeholder="0" min="0"></div>
+        <div class="fg"><label>🧪 Jenis Pupuk</label>
+          <select id="fJenis">
+            <option value="">— Pilih —</option>
+            <option>Urea</option><option>NPK 12-12-17-2-TE</option><option>NPK</option>
+            <option>Tsp/Rp</option><option>Dolomit</option><option>Borate</option>
+            <option>KCL</option><option>Kieserit</option><option>Lainnya</option>
+          </select>
+        </div>
+        <div class="fg"><label>⚖️ Dosis / Pohon (kg)</label><input type="number" id="fDosis" placeholder="0.000" step="0.001" min="0"></div>
+        <div class="fg"><label>📦 Total Pupuk (kg)</label><input type="number" id="fTotal" placeholder="Otomatis / manual" step="0.01" min="0"></div>
+        <div class="fg"><label>👷 Mandor / Pekerja</label><input type="text" id="fPekerja" placeholder="cth. Budi Santoso"></div>
+        <div class="fg"><label>🔧 Metode</label>
+          <select id="fMetode">
+            <option value="">— Pilih —</option>
+            <option>Tabur Mekanis</option><option>Tabur Manual</option>
+            <option>Piringan</option><option>Larikan</option><option>Injeksi Tanah</option><option>Fertigasi</option>
+          </select>
+        </div>
+        <div class="fg"><label>🌤️ Cuaca</label>
+          <select id="fCuaca">
+            <option value="">— Pilih —</option>
+            <option>☀️ Cerah</option><option>⛅ Berawan</option>
+            <option>🌦️ Hujan Ringan</option><option>🌧️ Hujan Lebat</option>
+          </select>
+        </div>
+        <div class="fg full"><label>📝 Catatan</label><textarea id="fCatatan" placeholder="Kondisi khusus, kendala, atau informasi tambahan..."></textarea></div>
+      </div>
+      <div class="form-act">
+        <button class="btn btn-accent" onclick="simpan()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="panel" style="animation-delay:.35s;">
+    <div class="panel-head">
+      <h2>📊 Rekap Data Pemupukan</h2>
+      <span id="rcnt" style="font-size:12px;color:var(--text3);font-weight:500;"></span>
+    </div>
+    <div class="panel-body">
+      <div class="frow">
+        <input type="text" id="fCari" placeholder="🔍  Cari blok, pekerja, jenis pupuk..." oninput="render()">
+        <select id="fFJ" onchange="render()">
+          <option value="">Semua Jenis Pupuk</option>
+          <option>Urea</option><option>NPK Mutiara</option><option>NPK Phonska</option>
+          <option>MKP</option><option>Dolomit</option><option>Borate</option>
+          <option>CIRP</option><option>Kieserit</option><option>Lainnya</option>
+        </select>
+        <select id="fFB" onchange="render()"><option value="">Semua Bulan</option></select>
+      </div>
+
+      <div class="tscroll">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Tanggal</th><th>Blok / Afd.</th><th>Luas (Ha)</th>
+              <th>Pohon</th><th>Jenis Pupuk</th><th>Dosis/phn (kg)</th><th>Total (kg)</th>
+              <th>Mandor</th><th>Metode</th><th>Cuaca</th><th>Catatan</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="emp" class="empty" style="display:none;">
+        <span class="ei">🌱</span>
+        <h3>Belum Ada Data</h3>
+        <p>Isi form di atas untuk mulai mencatat<br>data pemupukan kebun sawit Anda.</p>
+      </div>
+
+      <div class="trow-bar" id="trow" style="display:none;">
+        <div class="ti"><div class="tl">Ditampilkan</div><div class="tv" id="tTampil">0</div></div>
+        <div class="ti"><div class="tl">Total Lahan</div><div class="tv" id="tLuas">0 ha</div></div>
+        <div class="ti"><div class="tl">Total Pohon</div><div class="tv" id="tPohon">0</div></div>
+        <div class="ti"><div class="tl">Total Pupuk</div><div class="tv" id="tPupuk">0 kg</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"><div class="tbar" id="tbar"></div></div>
+
+<script>
+const KEY = 'sawittrack_v3';
+let data = [];
+
+function load() { try { data = JSON.parse(localStorage.getItem(KEY)) || []; } catch { data = []; } }
+function save() { localStorage.setItem(KEY, JSON.stringify(data)); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+  load();
+  document.getElementById('fTgl').value = today();
+  render(); updateStats(); buildBulanFilter();
+});
+
+// AUTO CALC
+['fPohon','fDosis'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  const p = +document.getElementById('fPohon').value || 0;
+  const d = +document.getElementById('fDosis').value || 0;
+  if (p > 0 && d > 0) document.getElementById('fTotal').value = (p*d).toFixed(2);
+}));
+
+// SIMPAN
+function simpan() {
+  const tgl = document.getElementById('fTgl').value;
+  const blok = document.getElementById('fBlok').value.trim();
+  const jenis = document.getElementById('fJenis').value;
+  if (!tgl || !blok || !jenis) { toast('⚠️  Tanggal, Blok, dan Jenis Pupuk wajib diisi!', '#ffd166'); return; }
+  data.unshift({
+    id: Date.now(), tgl, blok, jenis,
+    luas:   +document.getElementById('fLuas').value   || 0,
+    pohon:  +document.getElementById('fPohon').value  || 0,
+    dosis:  +document.getElementById('fDosis').value  || 0,
+    total:  +document.getElementById('fTotal').value  || 0,
+    pekerja: document.getElementById('fPekerja').value.trim(),
+    metode:  document.getElementById('fMetode').value,
+    cuaca:   document.getElementById('fCuaca').value,
+    catatan: document.getElementById('fCatatan').value.trim(),
+  });
+  save(); render(); updateStats(); buildBulanFilter(); resetForm();
+  toast('✅  Data berhasil disimpan!', '#3ddc84');
+}
+
+function hapus(id) {
+  if (!confirm('Hapus data ini?')) return;
+  data = data.filter(r => r.id !== id);
+  save(); render(); updateStats(); buildBulanFilter();
+  toast('🗑️  Data dihapus.', '#ff6b6b');
+}
+function hapusSemua() {
+  if (!confirm('Hapus SEMUA data? Tindakan tidak dapat dikembalikan!')) return;
+  data = []; save(); render(); updateStats(); buildBulanFilter();
+  toast('🗑️  Semua data dihapus.', '#ff6b6b');
+}
+function resetForm() {
+  ['fBlok','fLuas','fPohon','fDosis','fTotal','fPekerja','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  ['fJenis','fMetode','fCuaca'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fTgl').value = today();
+}
+
+// FILTER
+function filtered() {
+  const q  = document.getElementById('fCari').value.toLowerCase();
+  const fj = document.getElementById('fFJ').value;
+  const fb = document.getElementById('fFB').value;
+  return data.filter(r => {
+    const str = [r.blok,r.jenis,r.pekerja,r.metode,r.catatan].join(' ').toLowerCase();
+    return (!q || str.includes(q)) && (!fj || r.jenis===fj) && (!fb || r.tgl.startsWith(fb));
+  });
+}
+
+// RENDER
+function render() {
+  const rows = filtered();
+  const tb = document.getElementById('tbody');
+  const emp = document.getElementById('emp');
+  const tr = document.getElementById('trow');
+  document.getElementById('rcnt').textContent = rows.length ? `${rows.length} data` : '';
+
+  if (!rows.length) { tb.innerHTML=''; emp.style.display='block'; tr.style.display='none'; return; }
+  emp.style.display='none'; tr.style.display='flex';
+
+  tb.innerHTML = rows.map((r,i) => `
+    <tr>
+      <td><span class="rno">${i+1}</span></td>
+      <td style="white-space:nowrap;font-weight:500;color:var(--text2);">${fmtD(r.tgl)}</td>
+      <td><strong style="color:#fff;">${esc(r.blok)}</strong></td>
+      <td class="num">${r.luas ? r.luas.toFixed(2) : '—'}</td>
+      <td class="mu">${r.pohon ? r.pohon.toLocaleString() : '—'}</td>
+      <td><span class="chip ${cc(r.jenis)}">${esc(r.jenis)}</span></td>
+      <td class="mu">${r.dosis ? r.dosis.toFixed(3) : '—'}</td>
+      <td class="num">${r.total ? r.total.toFixed(2) : '—'}</td>
+      <td class="mu">${esc(r.pekerja)||'—'}</td>
+      <td class="mu" style="font-size:11px;">${esc(r.metode)||'—'}</td>
+      <td class="mu" style="font-size:11px;">${esc(r.cuaca)||'—'}</td>
+      <td class="mu" style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.catatan)}">${esc(r.catatan)||'—'}</td>
+      <td><button class="btn btn-del" onclick="hapus(${r.id})">Hapus</button></td>
+    </tr>`).join('');
+
+  document.getElementById('tTampil').textContent = rows.length;
+  document.getElementById('tLuas').textContent   = rows.reduce((s,r)=>s+(r.luas||0),0).toFixed(2)+' ha';
+  document.getElementById('tPohon').textContent  = rows.reduce((s,r)=>s+(r.pohon||0),0).toLocaleString();
+  document.getElementById('tPupuk').textContent  = rows.reduce((s,r)=>s+(r.total||0),0).toFixed(1)+' kg';
+}
+
+// STATS
+function updateStats() {
+  const ym = today().slice(0,7);
+  const B  = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const d  = new Date();
+  document.getElementById('sTotal').textContent = data.length;
+  const kg = data.reduce((s,r)=>s+(r.total||0),0);
+  document.getElementById('sKg').innerHTML = Math.round(kg).toLocaleString()+'<span class="sc-unit">kg</span>';
+  const ha = data.reduce((s,r)=>s+(r.luas||0),0);
+  document.getElementById('sHa').innerHTML = ha.toFixed(2)+'<span class="sc-unit">ha</span>';
+  document.getElementById('sBln').textContent = data.filter(r=>r.tgl.startsWith(ym)).length;
+  document.getElementById('sBlnLbl').textContent = B[d.getMonth()]+' '+d.getFullYear();
+}
+
+function buildBulanFilter() {
+  const months = [...new Set(data.map(r=>r.tgl.slice(0,7)))].sort().reverse();
+  const B = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const sel = document.getElementById('fFB');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Semua Bulan</option>' +
+    months.map(m => { const[y,mo]=m.split('-'); return `<option value="${m}"${m===cur?' selected':''}>${B[+mo-1]} ${y}</option>`; }).join('');
+}
+
+// EXPORT EXCEL
+function doExcel() {
+  const rows = filtered();
+  if (!rows.length) { toast('⚠️  Tidak ada data untuk diekspor!', '#ffd166'); return; }
+  const hdr = ['No','Tanggal','Blok/Afdeling','Luas (Ha)','Jml Pohon','Jenis Pupuk','Dosis/Pohon (kg)','Total Pupuk (kg)','Mandor','Metode','Cuaca','Catatan'];
+  const body = rows.map((r,i) => [i+1, fmtD(r.tgl), r.blok||'', r.luas||0, r.pohon||0, r.jenis||'', r.dosis||0, r.total||0, r.pekerja||'', r.metode||'', r.cuaca||'', r.catatan||'']);
+  body.push([]);
+  body.push(['TOTAL','','', rows.reduce((s,r)=>s+(r.luas||0),0).toFixed(2), rows.reduce((s,r)=>s+(r.pohon||0),0),'','', rows.reduce((s,r)=>s+(r.total||0),0).toFixed(2),'','','','']);
+  const ws = XLSX.utils.aoa_to_sheet([hdr, ...body]);
+  ws['!cols'] = [6,14,24,10,10,16,14,14,20,18,14,32].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Rekap Pemupukan');
+  XLSX.writeFile(wb, `SawitTrack_${today()}.xlsx`);
+  toast('📊  File Excel berhasil diunduh!', '#3ddc84');
+}
+
+// EXPORT PDF
+function doPDF() {
+  const rows = filtered();
+  if (!rows.length) { toast('⚠️  Tidak ada data untuk diekspor!', '#ffd166'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+  doc.setFillColor(11,31,18); doc.rect(0,0,297,28,'F');
+  doc.setFillColor(61,220,132); doc.rect(0,26,297,2,'F');
+  doc.setFontSize(16); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
+  doc.text('SAWITTRACK', 14, 12);
+  doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(143,191,160);
+  doc.text('Rekap Pemupukan Kelapa Sawit', 14, 20);
+  doc.setTextColor(200,230,215); doc.setFontSize(8);
+  doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`, 283, 12, {align:'right'});
+  doc.text(`Total: ${rows.length} data`, 283, 20, {align:'right'});
+
+  doc.autoTable({
+    startY: 33,
+    head:[['No','Tanggal','Blok/Afd','Luas\n(Ha)','Pohon','Jenis Pupuk','Dosis\n(kg/phn)','Total\n(kg)','Mandor','Metode','Cuaca','Catatan']],
+    body: rows.map((r,i) => [
+      i+1, fmtD(r.tgl), r.blok||'—',
+      r.luas ? r.luas.toFixed(2) : '—',
+      r.pohon ? r.pohon.toLocaleString() : '—',
+      r.jenis||'—',
+      r.dosis ? r.dosis.toFixed(3) : '—',
+      r.total ? r.total.toFixed(2) : '—',
+      r.pekerja||'—', r.metode||'—', r.cuaca||'—', r.catatan||'—'
+    ]),
+    headStyles:{ fillColor:[26,66,44], textColor:[143,191,160], fontSize:7.5, fontStyle:'bold', halign:'center', lineColor:[61,220,132], lineWidth:.2 },
+    bodyStyles:{ fontSize:7.5, textColor:[30,70,45] },
+    alternateRowStyles:{ fillColor:[238,250,242] },
+    columnStyles:{ 0:{cellWidth:8,halign:'center'}, 1:{cellWidth:22}, 2:{cellWidth:24,fontStyle:'bold'}, 3:{cellWidth:14,halign:'right'}, 4:{cellWidth:14,halign:'right'}, 5:{cellWidth:22}, 6:{cellWidth:16,halign:'right'}, 7:{cellWidth:16,halign:'right',fontStyle:'bold'} },
+    foot:[['','','TOTAL', rows.reduce((s,r)=>s+(r.luas||0),0).toFixed(2), rows.reduce((s,r)=>s+(r.pohon||0),0).toLocaleString(),'','', rows.reduce((s,r)=>s+(r.total||0),0).toFixed(2),'','','','']],
+    footStyles:{ fillColor:[11,31,18], textColor:[61,220,132], fontStyle:'bold', fontSize:8 },
+    margin:{left:8,right:8}, styles:{cellPadding:3,overflow:'ellipsize'},
+  });
+
+  const pg = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pg;i++){
+    doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`Halaman ${i} / ${pg} — SawitTrack`, 148, 205, {align:'center'});
+  }
+  doc.save(`SawitTrack_${today()}.pdf`);
+  toast('📄  File PDF berhasil diunduh!', '#3ddc84');
+}
+
+// HELPERS
+function fmtD(s) {
+  if (!s) return '—';
+  const[y,m,d]=s.split('-');
+  return `${+d} ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+m-1]} ${y}`;
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function cc(j='') {
+  const k=j.toLowerCase();
+  if(k.includes('Urea')) return 'c-Urea';
+  if(k.includes('NPK'))  return 'c-NPK';
+  if(k.includes('Tsp/Rp'))  return 'c-Tsp/Rp';
+  if(k.includes('Dolomit')) return 'c-Dolomit';
+  if(k.includes('Borate'))  return 'c-Borate';
+  if(k.includes('KCL'))    return 'c-KCL';
+  if(k.includes('Kohe'))    return 'c-Kohe';
+  return 'c-lain';
+}
+
+// TOAST
+let tt;
+function toast(msg, color='#3ddc84') {
+  const el=document.getElementById('toast');
+  clearTimeout(tt);
+  el.innerHTML = msg + '<div class="tbar" id="tbar"></div>';
+  el.style.borderColor = color+'55';
+  el.classList.add('show');
+  const b = el.querySelector('.tbar');
+  b.style.background = color; b.style.width='100%';
+  setTimeout(()=>{ b.style.width='0'; },50);
+  tt = setTimeout(()=>{ el.classList.remove('show'); },3200);
+}
+</script>
+</body>
+</html>
